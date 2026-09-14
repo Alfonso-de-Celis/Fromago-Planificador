@@ -1,0 +1,21 @@
+{
+  "name": "FROMAGO · Nuestro plan",
+  "short_name": "FROMAGO Plan",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fffaf0",
+  "theme_color": "#171717",
+  "description": "Planificador personal de actividades de FROMAGO 2026",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
