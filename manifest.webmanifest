@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "FROMAGO · Nuestro plan",
+  "name": "FROMAGO · Plan compartido",
   "short_name": "FROMAGO Plan",
-  "description": "Planificador familiar de actividades de FROMAGO 2026 para Alfonso, Belén y Elena",
+  "description": "Planificador compartido y sincronizable de actividades de FROMAGO 2026",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
