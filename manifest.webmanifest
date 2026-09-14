@@ -2,7 +2,7 @@
   "id": "./",
   "name": "FROMAGO · Plan compartido",
   "short_name": "FROMAGO Plan",
-  "description": "Planificador compartido y sincronizable de actividades de FROMAGO 2026",
+  "description": "Planificador compartido de actividades de FROMAGO 2026 con visitantes personalizados y sincronización de grupo",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
