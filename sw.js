@@ -1,9 +1,10 @@
-const CACHE='fromago-plan-v7';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./group.js','./self-join.js','./sync-config.js'];
+const VERSION='8';
+const CACHE='fromago-secure-v8';
+const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./secure-v8.js','./sync-config.js'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE.map(x=>new Request(x,{cache:'reload'})))));
 });
 
 self.addEventListener('activate',event=>{
@@ -13,40 +14,47 @@ self.addEventListener('activate',event=>{
     await self.clients.claim();
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of clients){
-      try{await client.navigate(client.url)}catch(e){}
+      try{
+        const u=new URL(client.url);
+        if(u.origin===self.location.origin && u.searchParams.get('appv')!==VERSION){
+          u.searchParams.set('appv',VERSION);
+          await client.navigate(u.toString());
+        }
+      }catch(e){}
     }
   })());
 });
 
-async function injectGroup(response){
+async function latestHtml(request){
+  let response;
+  try{
+    response=await fetch(request,{cache:'no-store'});
+    if(response.ok){const copy=response.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));}
+  }catch(e){response=await caches.match('./index.html');}
+  if(!response)return Response.error();
   const text=await response.text();
-  if(text.includes('src="./self-join.js"')) return new Response(text,{status:response.status,statusText:response.statusText,headers:response.headers});
-  let injected=text;
-  if(!injected.includes('src="./group.js"')) injected=injected.replace('</body>','<script src="./group.js"></script>\n</body>');
-  injected=injected.replace('</body>','<script src="./self-join.js"></script>\n</body>');
-  const headers=new Headers(response.headers);headers.set('content-type','text/html; charset=utf-8');
+  const cleaned=text
+    .replace(/<script\s+src=["']\.\/group\.js[^>]*><\/script>/gi,'')
+    .replace(/<script\s+src=["']\.\/self-join\.js[^>]*><\/script>/gi,'')
+    .replace(/<script\s+src=["']\.\/secure-v8\.js[^>]*><\/script>/gi,'');
+  const injected=cleaned.replace('</body>','<script src="./secure-v8.js?v=8"></script>\n</body>');
+  const headers=new Headers(response.headers);
+  headers.set('content-type','text/html; charset=utf-8');
+  headers.set('cache-control','no-store, max-age=0');
   return new Response(injected,{status:response.status,statusText:response.statusText,headers});
 }
 
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);
-  if(url.origin!==location.origin)return;
+  if(url.origin!==self.location.origin)return;
   if(event.request.mode==='navigate'){
-    event.respondWith((async()=>{
-      try{
-        const network=await fetch(event.request,{cache:'no-store'});
-        const copy=network.clone();
-        caches.open(CACHE).then(c=>c.put('./index.html',copy));
-        return await injectGroup(network);
-      }catch(e){
-        const cached=await caches.match('./index.html');
-        return cached?injectGroup(cached):Response.error();
-      }
-    })());
+    event.respondWith(latestHtml(event.request));
     return;
   }
-  event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(network=>{
-    const copy=network.clone();caches.open(CACHE).then(c=>c.put(event.request,copy));return network;
-  })));
+  if(/\/(secure-v8\.js|sync-config\.js|sw\.js)$/.test(url.pathname)){
+    event.respondWith(fetch(event.request,{cache:'no-store'}).catch(()=>caches.match(event.request)));
+    return;
+  }
+  event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request)));
 });
