@@ -1,5 +1,5 @@
-const CACHE='fromago-plan-v6';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./group.js','./sync-config.js'];
+const CACHE='fromago-plan-v7';
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./group.js','./self-join.js','./sync-config.js'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -20,8 +20,10 @@ self.addEventListener('activate',event=>{
 
 async function injectGroup(response){
   const text=await response.text();
-  if(text.includes('src="./group.js"')) return new Response(text,{status:response.status,statusText:response.statusText,headers:response.headers});
-  const injected=text.replace('</body>','<script src="./group.js"></script>\n</body>');
+  if(text.includes('src="./self-join.js"')) return new Response(text,{status:response.status,statusText:response.statusText,headers:response.headers});
+  let injected=text;
+  if(!injected.includes('src="./group.js"')) injected=injected.replace('</body>','<script src="./group.js"></script>\n</body>');
+  injected=injected.replace('</body>','<script src="./self-join.js"></script>\n</body>');
   const headers=new Headers(response.headers);headers.set('content-type','text/html; charset=utf-8');
   return new Response(injected,{status:response.status,statusText:response.statusText,headers});
 }
