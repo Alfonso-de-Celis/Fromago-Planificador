@@ -1,6 +1,6 @@
-const VERSION='8';
-const CACHE='fromago-secure-v8';
-const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./secure-v8.js','./sync-config.js'];
+const VERSION='9';
+const CACHE='fromago-secure-v9';
+const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./secure-v9.js','./sync-config.js'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -12,16 +12,6 @@ self.addEventListener('activate',event=>{
     const keys=await caches.keys();
     await Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)));
     await self.clients.claim();
-    const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    for(const client of clients){
-      try{
-        const u=new URL(client.url);
-        if(u.origin===self.location.origin && u.searchParams.get('appv')!==VERSION){
-          u.searchParams.set('appv',VERSION);
-          await client.navigate(u.toString());
-        }
-      }catch(e){}
-    }
   })());
 });
 
@@ -36,8 +26,9 @@ async function latestHtml(request){
   const cleaned=text
     .replace(/<script\s+src=["']\.\/group\.js[^>]*><\/script>/gi,'')
     .replace(/<script\s+src=["']\.\/self-join\.js[^>]*><\/script>/gi,'')
-    .replace(/<script\s+src=["']\.\/secure-v8\.js[^>]*><\/script>/gi,'');
-  const injected=cleaned.replace('</body>','<script src="./secure-v8.js?v=8"></script>\n</body>');
+    .replace(/<script\s+src=["']\.\/secure-v8\.js[^>]*><\/script>/gi,'')
+    .replace(/<script\s+src=["']\.\/secure-v9\.js[^>]*><\/script>/gi,'');
+  const injected=cleaned.replace('</body>','<script src="./secure-v9.js?v=9"></script>\n</body>');
   const headers=new Headers(response.headers);
   headers.set('content-type','text/html; charset=utf-8');
   headers.set('cache-control','no-store, max-age=0');
@@ -47,12 +38,12 @@ async function latestHtml(request){
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);
-  if(url.origin!==self.location.origin)return;
+  if(url.origin!==location.origin)return;
   if(event.request.mode==='navigate'){
     event.respondWith(latestHtml(event.request));
     return;
   }
-  if(/\/(secure-v8\.js|sync-config\.js|sw\.js)$/.test(url.pathname)){
+  if(/\/(secure-v9\.js|secure-v8\.js|sync-config\.js|sw\.js)$/.test(url.pathname)){
     event.respondWith(fetch(event.request,{cache:'no-store'}).catch(()=>caches.match(event.request)));
     return;
   }
