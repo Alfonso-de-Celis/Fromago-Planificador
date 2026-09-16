@@ -1,5 +1,5 @@
-const VERSION='11.1';
-const CACHE='fromago-secure-v11-1';
+const VERSION='11.2';
+const CACHE='fromago-secure-v11-2';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./secure-v11.js','./secure-v10.js','./locations-data-v11.js','./locations-ui-v11.js','./sync-config.js'];
 
 self.addEventListener('install',event=>{
@@ -35,7 +35,7 @@ function injectV11(text,response){
     .replace(/<script\s+src=["']\.\/secure-v11\.js[^>]*><\/script>/gi,'')
     .replace(/<script\s+src=["']\.\/locations-data-v11\.js[^>]*><\/script>/gi,'')
     .replace(/<script\s+src=["']\.\/locations-ui-v11\.js[^>]*><\/script>/gi,'');
-  const injected=cleaned.replace('</body>','<script src="./secure-v11.js?v=11"></script>\n<script src="./locations-data-v11.js?v=11.1"></script>\n<script src="./locations-ui-v11.js?v=11.1"></script>\n</body>');
+  const injected=cleaned.replace('</body>','<script src="./secure-v11.js?v=11"></script>\n<script src="./locations-data-v11.js?v=11.1"></script>\n<script src="./locations-ui-v11.js?v=11.2"></script>\n</body>');
   const headers=new Headers(response.headers);headers.set('content-type','text/html; charset=utf-8');headers.set('cache-control','no-store, max-age=0');
   return new Response(injected,{status:response.status,statusText:response.statusText,headers});
 }
