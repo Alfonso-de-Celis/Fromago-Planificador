@@ -1,6 +1,6 @@
-const VERSION='9';
-const CACHE='fromago-secure-v9';
-const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./secure-v9.js','./sync-config.js'];
+const VERSION='10';
+const CACHE='fromago-secure-v10';
+const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./secure-v10.js','./sync-config.js'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -27,8 +27,9 @@ async function latestHtml(request){
     .replace(/<script\s+src=["']\.\/group\.js[^>]*><\/script>/gi,'')
     .replace(/<script\s+src=["']\.\/self-join\.js[^>]*><\/script>/gi,'')
     .replace(/<script\s+src=["']\.\/secure-v8\.js[^>]*><\/script>/gi,'')
-    .replace(/<script\s+src=["']\.\/secure-v9\.js[^>]*><\/script>/gi,'');
-  const injected=cleaned.replace('</body>','<script src="./secure-v9.js?v=9"></script>\n</body>');
+    .replace(/<script\s+src=["']\.\/secure-v9\.js[^>]*><\/script>/gi,'')
+    .replace(/<script\s+src=["']\.\/secure-v10\.js[^>]*><\/script>/gi,'');
+  const injected=cleaned.replace('</body>','<script src="./secure-v10.js?v=10"></script>\n</body>');
   const headers=new Headers(response.headers);
   headers.set('content-type','text/html; charset=utf-8');
   headers.set('cache-control','no-store, max-age=0');
@@ -43,7 +44,7 @@ self.addEventListener('fetch',event=>{
     event.respondWith(latestHtml(event.request));
     return;
   }
-  if(/\/(secure-v9\.js|secure-v8\.js|sync-config\.js|sw\.js)$/.test(url.pathname)){
+  if(/\/(secure-v10\.js|sync-config\.js|sw\.js)$/.test(url.pathname)){
     event.respondWith(fetch(event.request,{cache:'no-store'}).catch(()=>caches.match(event.request)));
     return;
   }
