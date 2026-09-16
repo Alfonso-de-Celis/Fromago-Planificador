@@ -3,6 +3,7 @@ const CACHE='fromago-secure-v11';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./secure-v11.js','./secure-v10.js','./sync-config.js'];
 
 self.addEventListener('install',event=>{
+  self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE.map(x=>new Request(x,{cache:'reload'})))));
 });
 
