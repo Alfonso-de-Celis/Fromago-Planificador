@@ -71,9 +71,10 @@ jobs:
           s = p.read_text(encoding='utf-8')
           s = s.replace("const VERSION='11.7';", "const VERSION='11.8';")
           s = s.replace("const CACHE='fromago-secure-v11-7';", "const CACHE='fromago-secure-v11-8';")
+          replacement = r'''const injected=cleaned.replace('</body>','<script src="./secure-v10.js?v=11.8"></script>\n</body>');'''
           s = re.sub(
               r"const injected=cleaned\.replace\('</body>',.*?\);",
-              "const injected=cleaned.replace('</body>','<script src=\"./secure-v10.js?v=11.8\"></script>\\n</body>');",
+              lambda _: replacement,
               s,
               count=1,
               flags=re.S,
