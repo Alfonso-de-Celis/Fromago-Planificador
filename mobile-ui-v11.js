@@ -4,15 +4,9 @@ if(window.__FROMAGO_MOBILE_UI_V11__)return;
 window.__FROMAGO_MOBILE_UI_V11__=true;
 
 const SPACE_KEY='fromago-v11-space-filter';
-const BUFFER_MIGRATION_KEY='fromago-v11-buffer-default-30-v117';
-const PROFESSIONAL_MIGRATION_KEY='fromago-v11-professional-default-off-v117';
 let selectedSpace=null;
 try{selectedSpace=JSON.parse(localStorage.getItem(SPACE_KEY)||'null')}catch(e){selectedSpace=null}
 
-// Ajustes contrastados el 17/09 con el buscador oficial de FROMAGO.
-const puppets=ACTIVITIES.find(a=>a.id===28);if(puppets)puppets.registration=false;
-const urraca=ACTIVITIES.find(a=>a.id===49);if(urraca)urraca.time='21:15';
-const vallelongo=ACTIVITIES.find(a=>a.id===19);if(vallelongo)vallelongo.details='Organiza: Vallelongo · Edad recomendada: 3 a 12 años · Inscripción previa en el stand de Vallelongo';
 
 function groupClass(group=''){
  return ({
@@ -60,21 +54,6 @@ html,body{max-width:100%;overflow-x:hidden}.wrap,.hero,.toolbar,.scrollchips,.su
 }
 `;
 document.head.appendChild(style);
-
-// Migracion unica: el antiguo valor por defecto era 45 min. Desde ahora el valor por defecto es 30 min.
-if(!localStorage.getItem(BUFFER_MIGRATION_KEY)){
- if(+state.buffer===45){state.buffer=30;if(typeof save==='function')save()}
- localStorage.setItem(BUFFER_MIGRATION_KEY,'1');
-}
-// Migracion unica: Profesional parte desactivado; si el usuario lo activa despues, se respeta su eleccion.
-if(!localStorage.getItem(PROFESSIONAL_MIGRATION_KEY)){
- try{
-  enabledGroups.delete('Profesional');
-  if(!enabledGroups.size)for(const g of ALL_GROUPS)if(g!=='Profesional')enabledGroups.add(g);
-  localStorage.setItem(CAT_KEY,JSON.stringify([...enabledGroups]));
- }catch(e){}
- localStorage.setItem(PROFESSIONAL_MIGRATION_KEY,'1');
-}
 
 const baseCardMobile=card;
 card=function(a,extra=''){
@@ -127,7 +106,7 @@ function ensureSpaceButton(){
  let btn=document.getElementById('spacefilterbtn');if(!btn){btn=document.createElement('button');btn.type='button';btn.id='spacefilterbtn';btn.className='spacefilterbtn';btn.onclick=()=>openFromagoSpaces();sub.appendChild(btn)}
  const label=currentSpaceLabel();btn.classList.toggle('active',!!selectedSpace);btn.innerHTML=selectedSpace?`<b>📍 Espacios</b><small>${escapeHtml(label)}</small>`:'<b>📍 Espacios</b><small>Filtrar actividades o abrir mapa</small>';
 }
-function escapeHtml(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]))}
+function escapeHtml(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function mapHere(lat,lng){if(typeof window.openFromagoCoord==='function')window.openFromagoCoord(lat,lng);else window.location.assign(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`)}
 window.setFromagoSpaceFilter=function(lat,lng,name=''){
  selectedSpace={lat:+lat,lng:+lng,name};localStorage.setItem(SPACE_KEY,JSON.stringify(selectedSpace));document.querySelector('.spacefilterback')?.remove();ensureSpaceButton();window.renderProgram();

@@ -1,5 +1,5 @@
-const VERSION='11.7';
-const CACHE='fromago-secure-v11-7';
+const VERSION='11.8';
+const CACHE='fromago-secure-v11-8';
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./secure-v11.js','./secure-v10.js','./locations-data-v11.js','./locations-ui-v11.js','./program-ui-v11.js','./status-ui-v11.js','./mobile-ui-v11.js','./sync-config.js'];
 
 self.addEventListener('install',event=>{
@@ -42,7 +42,7 @@ function injectV11(text,response){
     .replace(/<script\s+src=["']\.\/program-ui-v11\.js[^>]*><\/script>/gi,'')
     .replace(/<script\s+src=["']\.\/status-ui-v11\.js[^>]*><\/script>/gi,'')
     .replace(/<script\s+src=["']\.\/mobile-ui-v11\.js[^>]*><\/script>/gi,'');
-  const injected=cleaned.replace('</body>','<script src="./secure-v11.js?v=11"></script>\n<script src="./locations-data-v11.js?v=11.1"></script>\n<script src="./locations-ui-v11.js?v=11.2"></script>\n<script src="./program-ui-v11.js?v=11.3"></script>\n<script src="./status-ui-v11.js?v=11.7"></script>\n<script src="./mobile-ui-v11.js?v=11.7"></script>\n</body>');
+  const injected=cleaned.replace('</body>','<script src="./secure-v10.js?v=11.8"></script>\n</body>');
   const headers=new Headers(response.headers);headers.set('content-type','text/html; charset=utf-8');headers.set('cache-control','no-store, max-age=0');
   return new Response(injected,{status:response.status,statusText:response.statusText,headers});
 }
@@ -53,8 +53,8 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
   if(event.request.mode==='navigate'){event.respondWith(latestHtml(event.request));return;}
   if(/\/(secure-v11\.js|secure-v10\.js|locations-data-v11\.js|locations-ui-v11\.js|program-ui-v11\.js|status-ui-v11\.js|mobile-ui-v11\.js|sync-config\.js|sw\.js)$/.test(url.pathname)){
-    event.respondWith(fetch(event.request,{cache:'no-store'}).catch(()=>caches.match(event.request)));
+    event.respondWith(fetch(event.request,{cache:'no-store'}).catch(()=>caches.match(event.request,{ignoreSearch:true})));
     return;
   }
-  event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(network=>{const copy=network.clone();caches.open(CACHE).then(c=>c.put(event.request,copy));return network})));
+  event.respondWith(caches.match(event.request,{ignoreSearch:true}).then(cached=>cached||fetch(event.request).then(network=>{const copy=network.clone();caches.open(CACHE).then(c=>c.put(event.request,copy));return network})));
 });
