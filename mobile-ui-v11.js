@@ -7,9 +7,10 @@ const SPACE_KEY='fromago-v11-space-filter';
 let selectedSpace=null;
 try{selectedSpace=JSON.parse(localStorage.getItem(SPACE_KEY)||'null')}catch(e){selectedSpace=null}
 
-// Correccion contrastada con el buscador oficial de FROMAGO: esta actividad no requiere inscripcion.
-const puppets=ACTIVITIES.find(a=>a.id===28);
-if(puppets)puppets.registration=false;
+// Ajustes contrastados el 17/09 con el buscador oficial de FROMAGO.
+const puppets=ACTIVITIES.find(a=>a.id===28);if(puppets)puppets.registration=false;
+const urraca=ACTIVITIES.find(a=>a.id===49);if(urraca)urraca.time='21:15';
+const vallelongo=ACTIVITIES.find(a=>a.id===19);if(vallelongo)vallelongo.details='Organiza: Vallelongo · Edad recomendada: 3 a 12 años · Inscripción previa en el stand de Vallelongo';
 
 const style=document.createElement('style');
 style.textContent=`
