@@ -3,7 +3,7 @@
 if(window.__FROMAGO_STATUS_UI_V11__)return;
 window.__FROMAGO_STATUS_UI_V11__=true;
 
-const UI_VERSION='11.4';
+const UI_VERSION='11.5';
 let updateAvailable=false;
 let announcedVersion=null;
 
@@ -27,10 +27,10 @@ function health(){
 function setHealth(){
  const el=health();if(!el)return;
  const src=originalStatus(),pending=!!src?.classList.contains('pending'),online=navigator.onLine;
- if(updateAvailable){el.className='healthpill update';el.textContent='⬆ Actualización disponible';el.title='Pulsa para cargar la última versión';return}
- if(!online){el.className='healthpill off';el.textContent=pending?'○ Sin conexión · cambios pendientes':'○ Sin conexión · guardado local';el.title='La app seguirá disponible con los datos ya cargados';return}
- if(pending){el.className='healthpill wait';el.textContent='↻ Conectado · cambios pendientes';el.title='Los cambios se enviarán en cuanto sea posible';return}
- if(src?.classList.contains('ok')){el.className='healthpill ok';el.textContent='✓ Al día · conectado · guardado';el.title=`Versión ${UI_VERSION} · conexión activa · cambios guardados`;return}
+ if(updateAvailable){el.className='healthpill update';el.textContent='⬆ Actualizar';el.title='Hay una versión nueva. Pulsa para actualizar.';return}
+ if(!online){el.className='healthpill off';el.textContent='○ Sin conexión';el.title=pending?'Hay cambios pendientes de sincronizar.':'La app sigue disponible con los datos guardados en este terminal.';return}
+ if(pending){el.className='healthpill wait';el.textContent='↻ Guardando…';el.title='Conectado. Terminando de guardar tus cambios.';return}
+ if(src?.classList.contains('ok')){el.className='healthpill ok';el.textContent='✓ Sincronizado';el.title=`Versión ${UI_VERSION} · conectado · cambios guardados · app al día`;return}
  el.className='healthpill wait';el.textContent='… Conectando';el.title='Comprobando conexión y sincronización';
 }
 function watchOriginal(){
