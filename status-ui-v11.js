@@ -3,7 +3,7 @@
 if(window.__FROMAGO_STATUS_UI_V11__)return;
 window.__FROMAGO_STATUS_UI_V11__=true;
 
-const UI_VERSION='11.5';
+const UI_VERSION='11.6';
 let updateAvailable=false;
 let announcedVersion=null;
 
