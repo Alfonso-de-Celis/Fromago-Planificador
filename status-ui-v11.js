@@ -30,7 +30,8 @@ function setHealth(){
  if(updateAvailable){el.className='healthpill update';el.textContent='⬆ Actualizar';el.title='Hay una versión nueva. Pulsa para actualizar.';return}
  if(!online){el.className='healthpill off';el.textContent='○ Sin conexión';el.title=pending?'Hay cambios pendientes de sincronizar.':'La app sigue disponible con los datos guardados en este terminal.';return}
  if(pending){el.className='healthpill wait';el.textContent='↻ Guardando…';el.title='Conectado. Terminando de guardar tus cambios.';return}
- if(src?.classList.contains('ok')){el.className='healthpill ok';el.textContent='✓ Sincronizado';el.title=`Versión ${UI_VERSION} · conectado · cambios guardados · app al día`;return}
+ if(src?.classList.contains('ok')&&announcedVersion===UI_VERSION){el.className='healthpill ok';el.textContent='✓ Sincronizado';el.title=`Versión ${UI_VERSION} · conectado · cambios guardados · app al día`;return}
+ if(src?.classList.contains('ok')&&!announcedVersion){el.className='healthpill wait';el.textContent='… Verificando';el.title='Comprobando que la app está en la última versión';return}
  el.className='healthpill wait';el.textContent='… Conectando';el.title='Comprobando conexión y sincronización';
 }
 function watchOriginal(){
@@ -41,6 +42,7 @@ function watchOriginal(){
 window.addEventListener('online',setHealth);window.addEventListener('offline',setHealth);
 
 function removeFalseUpdateBar(){if(!updateAvailable)document.getElementById('updatebar')?.remove()}
+function askWorkerVersion(){try{navigator.serviceWorker?.controller?.postMessage({type:'GET_VERSION'})}catch(e){}}
 if('serviceWorker'in navigator){
  navigator.serviceWorker.addEventListener('message',e=>{
   if(e.data?.type!=='UPDATE_READY')return;
@@ -49,7 +51,9 @@ if('serviceWorker'in navigator){
   if(!updateAvailable)setTimeout(removeFalseUpdateBar,0);
   setHealth();
  });
- navigator.serviceWorker.getRegistration?.().then(reg=>{if(reg?.waiting){updateAvailable=true;setHealth()}}).catch(()=>{});
+ navigator.serviceWorker.addEventListener('controllerchange',()=>setTimeout(askWorkerVersion,0));
+ navigator.serviceWorker.getRegistration?.().then(reg=>{if(reg?.waiting){updateAvailable=true;setHealth()}askWorkerVersion()}).catch(()=>askWorkerVersion());
+ setTimeout(askWorkerVersion,150);
 }
 const updateObserver=new MutationObserver(()=>{if(document.getElementById('updatebar')&&!updateAvailable&&announcedVersion===UI_VERSION)removeFalseUpdateBar()});
 updateObserver.observe(document.documentElement,{childList:true,subtree:true});
