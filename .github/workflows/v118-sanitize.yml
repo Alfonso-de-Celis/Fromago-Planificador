@@ -1,0 +1,141 @@
+name: FROMAGO v11.8 sanitation
+
+on:
+  push:
+    paths:
+      - '.github/workflows/v118-sanitize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sanitize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply v11.8 fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          root = Path('.')
+
+          # 1,2,3,5: source data, true 30-min default, direct v11 bridge on first visit.
+          p = root / 'index.html'
+          s = p.read_text(encoding='utf-8')
+          m = re.search(r'const ACTIVITIES=(\[.*?\]);\nconst DAY_ORDER=', s, re.S)
+          assert m, 'ACTIVITIES block not found'
+          activities = json.loads(m.group(1))
+          assert len(activities) == 221, f'Unexpected activity count: {len(activities)}'
+          by_id = {a['id']: a for a in activities}
+          by_id[19]['details'] = 'Organiza: Vallelongo · Edad recomendada: 3 a 12 años · Inscripción previa en el stand de Vallelongo'
+          by_id[28]['registration'] = False
+          by_id[49]['time'] = '21:15'
+          packed = json.dumps(activities, ensure_ascii=False, separators=(',', ':'))
+          s = s[:m.start(1)] + packed + s[m.end(1):]
+          old_default = "const defaultState={a:[],b:[],c:[],buffer:45,view:'program',day:'Todos',group:'Todo',query:'',regOnly:false,loc:''};"
+          new_default = "const defaultState={a:[],b:[],c:[],buffer:30,view:'program',day:'Todos',group:'Todo',query:'',regOnly:false,loc:''};"
+          assert old_default in s, '45-minute default not found'
+          s = s.replace(old_default, new_default, 1)
+          bridge = '<script src="./secure-v10.js?v=11.8"></script>'
+          s = re.sub(r'\n?<script\s+src=["\']\./secure-v10\.js[^>]*></script>\n?', '\n', s, flags=re.I)
+          s = s.replace('</body>', bridge + '\n</body>')
+          p.write_text(s, encoding='utf-8')
+
+          # 3,4,5,6: remove destructive migrations/runtime data patches and fix escaping.
+          p = root / 'mobile-ui-v11.js'
+          s = p.read_text(encoding='utf-8')
+          s = re.sub(r"\nconst BUFFER_MIGRATION_KEY=.*?;", '', s, count=1)
+          s = re.sub(r"\nconst PROFESSIONAL_MIGRATION_KEY=.*?;", '', s, count=1)
+          s = re.sub(r"\n// Ajustes contrastados el 17/09 con el buscador oficial de FROMAGO\.\nconst puppets=.*?\nconst urraca=.*?\nconst vallelongo=.*?\n", '\n', s, count=1)
+          s = re.sub(r"\n// Migracion unica: el antiguo valor por defecto era 45 min\..*?\nconst baseCardMobile=card;", '\nconst baseCardMobile=card;', s, count=1, flags=re.S)
+          s = s.replace("'\\\"':'&quot',", "'\\\"':'&quot;',")
+          p.write_text(s, encoding='utf-8')
+
+          # Version alignment.
+          p = root / 'secure-v10.js'
+          s = p.read_text(encoding='utf-8').replace("status-ui-v11.js?v=11.7", "status-ui-v11.js?v=11.8").replace("mobile-ui-v11.js?v=11.7", "mobile-ui-v11.js?v=11.8")
+          p.write_text(s, encoding='utf-8')
+
+          p = root / 'status-ui-v11.js'
+          s = p.read_text(encoding='utf-8').replace("const UI_VERSION='11.7';", "const UI_VERSION='11.8';")
+          p.write_text(s, encoding='utf-8')
+
+          # 1,2: offline query-insensitive fallback and one bridge injection path.
+          p = root / 'sw.js'
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("const VERSION='11.7';", "const VERSION='11.8';")
+          s = s.replace("const CACHE='fromago-secure-v11-7';", "const CACHE='fromago-secure-v11-8';")
+          s = re.sub(
+              r"const injected=cleaned\.replace\('</body>',.*?\);",
+              "const injected=cleaned.replace('</body>','<script src=\"./secure-v10.js?v=11.8\"></script>\\n</body>');",
+              s,
+              count=1,
+              flags=re.S,
+          )
+          s = s.replace("caches.match(event.request))", "caches.match(event.request,{ignoreSearch:true}))")
+          s = s.replace("caches.match(event.request).then(", "caches.match(event.request,{ignoreSearch:true}).then(")
+          p.write_text(s, encoding='utf-8')
+
+          # Guardrails.
+          index = (root / 'index.html').read_text(encoding='utf-8')
+          mobile = (root / 'mobile-ui-v11.js').read_text(encoding='utf-8')
+          sw = (root / 'sw.js').read_text(encoding='utf-8')
+          status = (root / 'status-ui-v11.js').read_text(encoding='utf-8')
+          bridge_js = (root / 'secure-v10.js').read_text(encoding='utf-8')
+          assert 'buffer:30' in index and 'buffer:45' not in re.search(r'const defaultState=.*?;', index).group(0)
+          assert '<script src="./secure-v10.js?v=11.8"></script>' in index
+          assert 'BUFFER_MIGRATION_KEY' not in mobile and 'PROFESSIONAL_MIGRATION_KEY' not in mobile
+          assert 'const puppets=' not in mobile and 'const urraca=' not in mobile and 'const vallelongo=' not in mobile
+          assert "'\\\"':'&quot;'," in mobile
+          assert "VERSION='11.8'" in sw and "fromago-secure-v11-8" in sw
+          assert 'ignoreSearch:true' in sw
+          assert 'secure-v10.js?v=11.8' in sw
+          assert "UI_VERSION='11.8'" in status
+          assert 'mobile-ui-v11.js?v=11.8' in bridge_js and 'status-ui-v11.js?v=11.8' in bridge_js
+
+          # Reparse source-of-truth activities after writing.
+          m2 = re.search(r'const ACTIVITIES=(\[.*?\]);\nconst DAY_ORDER=', index, re.S)
+          acts2 = json.loads(m2.group(1))
+          check = {a['id']: a for a in acts2}
+          assert len(acts2) == 221
+          assert check[19]['details'].endswith('stand de Vallelongo')
+          assert check[28]['registration'] is False
+          assert check[49]['time'] == '21:15'
+          PY
+
+      - name: Syntax and diff checks
+        shell: bash
+        run: |
+          node --check secure-v10.js
+          node --check status-ui-v11.js
+          node --check mobile-ui-v11.js
+          node --check sw.js
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script>(.*?)</script>',html,re.S)
+          assert scripts
+          Path('/tmp/fromago-inline.js').write_text(scripts[-1],encoding='utf-8')
+          PY
+          node --check /tmp/fromago-inline.js
+          git diff --check
+
+      - name: Commit v11.8
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo 'No changes required'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html mobile-ui-v11.js secure-v10.js status-ui-v11.js sw.js
+          git commit -m 'Harden FROMAGO v11.8 loading, defaults and source data'
+          git push
