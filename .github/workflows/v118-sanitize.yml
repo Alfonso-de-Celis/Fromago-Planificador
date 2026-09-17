@@ -54,7 +54,7 @@ jobs:
           s = re.sub(r"\nconst PROFESSIONAL_MIGRATION_KEY=.*?;", '', s, count=1)
           s = re.sub(r"\n// Ajustes contrastados el 17/09 con el buscador oficial de FROMAGO\.\nconst puppets=.*?\nconst urraca=.*?\nconst vallelongo=.*?\n", '\n', s, count=1)
           s = re.sub(r"\n// Migracion unica: el antiguo valor por defecto era 45 min\..*?\nconst baseCardMobile=card;", '\nconst baseCardMobile=card;', s, count=1, flags=re.S)
-          s = s.replace("&quot',", "&quot;',")
+          s = re.sub(r'&quot(?!;)', '&quot;', s)
           p.write_text(s, encoding='utf-8')
 
           # Version alignment.
@@ -92,7 +92,7 @@ jobs:
           assert '<script src="./secure-v10.js?v=11.8"></script>' in index
           assert 'BUFFER_MIGRATION_KEY' not in mobile and 'PROFESSIONAL_MIGRATION_KEY' not in mobile
           assert 'const puppets=' not in mobile and 'const urraca=' not in mobile and 'const vallelongo=' not in mobile
-          assert "&quot;'," not in mobile and '&quot;' in mobile
+          assert re.search(r'&quot(?!;)', mobile) is None
           assert "VERSION='11.8'" in sw and "fromago-secure-v11-8" in sw
           assert 'ignoreSearch:true' in sw
           assert 'secure-v10.js?v=11.8' in sw
