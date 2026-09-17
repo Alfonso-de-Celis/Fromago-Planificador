@@ -17,6 +17,10 @@ self.addEventListener('activate',event=>{
   })());
 });
 
+self.addEventListener('message',event=>{
+  if(event.data?.type==='GET_VERSION')event.source?.postMessage({type:'UPDATE_READY',version:VERSION});
+});
+
 async function latestHtml(request){
   try{
     const network=await fetch(request,{cache:'no-store'});
